@@ -198,14 +198,14 @@ def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202
                 duplicates = df[df.duplicated()]
                 # Check if the resulting DataFrame is empty
                 if duplicates.empty:
-                    print("No duplicates found.")
-                    print("No duplicates found.", file=file)
+                    print(f"No duplicates found in region: {region}, psr_type: {psr_type}.")
+                    print(f"No duplicates found in region: {region}, psr_type: {psr_type}.", file=file)
                 else:
                     print("//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
-                    print("Duplicates found. Rows:")
+                    print(f"Duplicates found in region: {region}, psr_type: {psr_type}. Rows:")
                     print(duplicates)
                     print("//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////",file=file)
-                    print("Duplicates found. Rows:", file=file)
+                    print(f"Duplicates found in region: {region}, psr_type: {psr_type}. Rows:", file=file)
                     print(duplicates, file=file)
 
 
