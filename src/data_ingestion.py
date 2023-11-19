@@ -17,7 +17,7 @@ def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='20
     yearStart = int(periodStart[:4])
     yearEnd = int(periodEnd[:4])
     if debug_info:
-        print(f'start: {yearStart} end: {yearEnd}')
+        print(f'Start year: {yearStart} End year: {yearEnd}')
 
     dif = yearEnd - yearStart
 
@@ -25,20 +25,23 @@ def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='20
     region_data = {}
     if dif != 0:
         for i in range(dif):
-            if debug_info:
-                print(i)
-
+            if i==0:
+                year_start_date = periodStart[4:]
+            else:
+                year_start_date = "01010000"
             #General parameters for the API
             params = {
                 'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
                 'documentType': 'A65',
                 'processType': 'A16',
                 'outBiddingZone_Domain': 'FILL_IN',   #used for Load data
-                'periodStart': str(yearStart + i) + periodStart[4:],
-                'periodEnd': str(yearStart + i + 1) + periodEnd[4:]
+                'periodStart': str(yearStart + i) + year_start_date,
+                'periodEnd': str(yearStart + i + 1) + "01010000"
             }
             if basic_info:
-                print(params['periodStart'], params['periodEnd'])
+                start_string = datetime.datetime.strptime(params['periodStart'], "%Y%m%d%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
+                end_string = datetime.datetime.strptime(params['periodEnd'], "%Y%m%d%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
+                print(f"Doing period from: {start_string}, to: {end_string}")
 
             # Loop through the regions and get data for each region
             for region, area_code in regions.items():
@@ -58,18 +61,24 @@ def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='20
 
                 # Concatenate the current dataframe with the region's dataframe
                 region_data[region] = pd.concat([region_data[region], df], ignore_index=True)
-
+    
+    if dif != 0:
+        year_start_date = "01010000"
+    else:
+        year_start_date = periodStart[4:]
     #General parameters for the API
     params = {
         'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
         'documentType': 'A65',
         'processType': 'A16',
         'outBiddingZone_Domain': 'FILL_IN',   #used for Load data
-        'periodStart': str(yearEnd) + periodStart[4:],
-        'periodEnd': str(yearStart) + periodEnd[4:]
+        'periodStart': str(yearEnd) + year_start_date,
+        'periodEnd': str(yearEnd) + periodEnd[4:]
     }
     if basic_info:
-        print(params['periodStart'], params['periodEnd'])
+        start_string = datetime.datetime.strptime(params['periodStart'], "%Y%m%d%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
+        end_string = datetime.datetime.strptime(params['periodEnd'], "%Y%m%d%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
+        print(f"Doing period from: {start_string}, to: {end_string}")
 
     # Loop through the regions and get data for each region
     for region, area_code in regions.items():
