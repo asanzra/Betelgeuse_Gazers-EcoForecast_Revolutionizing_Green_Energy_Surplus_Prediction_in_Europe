@@ -1,10 +1,11 @@
 import argparse
 import datetime
 import pandas as pd
+from dateutil.relativedelta import relativedelta
 from utils import perform_get_request, xml_to_load_dataframe, xml_to_gen_data
 
 basic_info = True
-debug_info = False
+debug_info = True
 
 def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202303240000', output_path='./data'):
     
@@ -22,43 +23,76 @@ def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='20
 
     # Dictionary to store dataframes for each region
     region_data = {}
+    if dif != 0:
+        for i in range(dif):
+            if debug_info:
+                print(i)
 
-    for i in range(dif):
-        if debug_info:
-            print(i)
-        # General parameters for the API
-        params = {
-            'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
-            'documentType': 'A65',
-            'processType': 'A16',
-            'outBiddingZone_Domain': 'FILL_IN',  # used for Load data
-            'periodStart': str(yearStart + i) + periodStart[4:],
-            'periodEnd': str(yearStart + i + 1) + periodEnd[4:]
-        }
-        #print(params['periodStart'], params['periodEnd'])
-
-        # Loop through the regions and get data for each region
-        for region, area_code in regions.items():
+            #General parameters for the API
+            params = {
+                'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
+                'documentType': 'A65',
+                'processType': 'A16',
+                'outBiddingZone_Domain': 'FILL_IN',   #used for Load data
+                'periodStart': str(yearStart + i) + periodStart[4:],
+                'periodEnd': str(yearStart + i + 1) + periodEnd[4:]
+            }
             if basic_info:
-                print(f'Fetching data for {region}...')
-            params['outBiddingZone_Domain'] = area_code
+                print(params['periodStart'], params['periodEnd'])
 
-            # Use the requests library to get data from the API for the specified time range
-            response_content = perform_get_request(url, params)
+            # Loop through the regions and get data for each region
+            for region, area_code in regions.items():
+                if basic_info:
+                    print(f'Fetching load data for {region}...')
+                params['outBiddingZone_Domain'] = area_code
 
-            # Response content is a string of XML data
-            df = xml_to_load_dataframe(response_content)
+                # Use the requests library to get data from the API for the specified time range
+                response_content = perform_get_request(url, params)
 
-            # If the region is not in the dictionary, create an empty dataframe for it
-            if region not in region_data:
-                region_data[region] = pd.DataFrame()
+                # Response content is a string of XML data
+                df = xml_to_load_dataframe(response_content)
 
-            # Concatenate the current dataframe with the region's dataframe
-            region_data[region] = pd.concat([region_data[region], df], ignore_index=True)
+                # If the region is not in the dictionary, create an empty dataframe for it
+                if region not in region_data:
+                    region_data[region] = pd.DataFrame()
+
+                # Concatenate the current dataframe with the region's dataframe
+                region_data[region] = pd.concat([region_data[region], df], ignore_index=True)
+
+    #General parameters for the API
+    params = {
+        'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
+        'documentType': 'A65',
+        'processType': 'A16',
+        'outBiddingZone_Domain': 'FILL_IN',   #used for Load data
+        'periodStart': str(yearEnd) + periodStart[4:],
+        'periodEnd': str(yearStart) + periodEnd[4:]
+    }
+    if basic_info:
+        print(params['periodStart'], params['periodEnd'])
+
+    # Loop through the regions and get data for each region
+    for region, area_code in regions.items():
+        if basic_info:
+            print(f'Fetching load data for {region}...')
+        params['outBiddingZone_Domain'] = area_code
+
+        # Use the requests library to get data from the API for the specified time range
+        response_content = perform_get_request(url, params)
+
+        # Response content is a string of XML data
+        df = xml_to_load_dataframe(response_content)
+
+        # If the region is not in the dictionary, create an empty dataframe for it
+        if region not in region_data:
+            region_data[region] = pd.DataFrame()
+
+        # Concatenate the current dataframe with the region's dataframe
+        region_data[region] = pd.concat([region_data[region], df], ignore_index=True)
 
     # Save the dataframes for each region to separate CSV files
     for region, df in region_data.items():
-        df.to_csv(f'{output_path}/load_{region}.csv', index=False)
+            df.to_csv(f'{output_path}/load_{region}.csv', index=False)
 
     return
 
@@ -69,6 +103,20 @@ def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202
     # URL of the RESTful API
     url = 'https://web-api.tp.entsoe.eu/api'
 
+    # Convert start and end periods to datetime objects
+    start_date = pd.to_datetime(periodStart, format='%Y%m%d%H%M')
+    end_date = pd.to_datetime(periodEnd, format='%Y%m%d%H%M')
+
+    if debug_info:
+        print(start_date, end_date)
+    # Calculate the number of days between start and end dates
+    num_days = (end_date - start_date).days
+
+    if debug_info:
+        print(num_days)
+    # Dictionary to store psr_type dictionaries for each region
+    region_data = {}
+    
     # General parameters for the API
     params = {
         'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
@@ -79,23 +127,44 @@ def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202
         'periodStart': periodStart, # in the format YYYYMMDDHHMM
         'periodEnd': periodEnd # in the format YYYYMMDDHHMM
     }
+    for j in range(num_days):
+        # Loop through the regions and get psr_types dict for each region
+        if debug_info:
+            print(f'Day number: {j}')
+        for region, area_code in regions.items():
+            if basic_info:
+                print(f'Fetching gen data for {region}...')
+            params['outBiddingZone_Domain'] = area_code
+            params['in_Domain'] = area_code
+        
+            # Use the requests library to get data from the API for the specified time range
+            response_content = perform_get_request(url, params)
 
-    # Loop through the regions and get data for each region
-    for region, area_code in regions.items():
-        if basic_info:
-            print(f'Fetching data for {region}...')
-        params['outBiddingZone_Domain'] = area_code
-        params['in_Domain'] = area_code
-    
-        # Use the requests library to get data from the API for the specified time range
-        response_content = perform_get_request(url, params)
+            # Response content is a string of XML data
+            dfs = xml_to_gen_data(response_content)
 
-        # Response content is a string of XML data
-        dfs = xml_to_gen_data(response_content)
+            # If the region is not in the dictionary, create an empty directory as its value, that will include the psr_types and corresponding data frames
+            if region not in region_data:
+                region_data[region] = {}
 
-        # Save the dfs to CSV files
-        for psr_type, df in dfs.items():
-            # Save the DataFrame to a CSV file
+            # Save each psr_type in region_data[region][psr_type] with corresponding df
+            for psr_type in dfs:
+                if debug_info:
+                    print(f'Fetching psr_type: {psr_type} for region: {region}')
+                
+                #If the psr_type is not in the dictionary, create an empty data frame for it
+                if psr_type not in region_data[region]:
+                     region_data[region][psr_type] = pd.DataFrame()
+                
+                #Cocatenate current data frame of psr_type to existing data frame for psr_type in dict region_data[region]
+                region_data[region][psr_type] = pd.concat([region_data[region][psr_type], dfs[psr_type]], ignore_index=True)        
+
+    #Create final CSV separate files with each info
+    for region, region_data_psr_types in region_data.items():
+        for psr_type, df in region_data_psr_types.items():
+            #Drop duplicating final dataframe for each psr_type for each region
+            region_data[region][psr_type] = region_data[region][psr_type].drop_duplicates()
+            # Save Final DataFrames to separate CSV files for each region and psr_type
             df.to_csv(f'{output_path}/gen_{region}_{psr_type}.csv', index=False)
     
     return
