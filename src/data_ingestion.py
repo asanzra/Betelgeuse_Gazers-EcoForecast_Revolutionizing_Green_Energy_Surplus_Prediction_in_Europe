@@ -3,12 +3,30 @@ import datetime
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 from utils import perform_get_request, xml_to_load_dataframe, xml_to_gen_data
+import threading
+import time
 
 basic_info = True
 debug_info = True
 extra_info = True
 
-def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202303240000', output_path='./data'):
+def load_api_work(url, params, region, region_data):
+    # Use the requests library to get data from the API for the specified time range
+    response_content = perform_get_request(url, params)
+
+    # Response content is a string of XML data
+    df = xml_to_load_dataframe(response_content)
+
+    # If the region is not in the dictionary, create an empty dataframe for it
+    if region not in region_data:
+        region_data[region] = pd.DataFrame()
+
+    # Concatenate the current dataframe with the region's dataframe
+    region_data[region] = pd.concat([region_data[region], df], ignore_index=True)
+
+    print(f'Got data for {region} :)')
+
+def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202303240000', output_path='./data', is_threading=True):
     
     #There is a period range limit of 1 year for this API. Processed in 1 year chunks 
     
@@ -24,6 +42,7 @@ def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='20
 
     # Dictionary to store dataframes for each region
     region_data = {}
+    working_threads=[]
     if dif != 0:
         for i in range(dif):
             if i==0:
@@ -50,19 +69,13 @@ def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='20
                     print(f'Fetching load data for {region}...')
                 params['outBiddingZone_Domain'] = area_code
 
-                # Use the requests library to get data from the API for the specified time range
-                response_content = perform_get_request(url, params)
+                if not is_threading:
+                    load_api_work(url, params, region, region_data)
+                elif is_threading:
+                    new_thread = threading.Thread(target=load_api_work,args=(url, params, region, region_data))
+                    new_thread.start()
+                    working_threads.append(new_thread)
 
-                # Response content is a string of XML data
-                df = xml_to_load_dataframe(response_content)
-
-                # If the region is not in the dictionary, create an empty dataframe for it
-                if region not in region_data:
-                    region_data[region] = pd.DataFrame()
-
-                # Concatenate the current dataframe with the region's dataframe
-                region_data[region] = pd.concat([region_data[region], df], ignore_index=True)
-    
     if dif != 0:
         year_start_date = "01010000"
     else:
@@ -87,30 +100,61 @@ def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='20
             print(f'Fetching load data for {region}...')
         params['outBiddingZone_Domain'] = area_code
 
-        # Use the requests library to get data from the API for the specified time range
-        response_content = perform_get_request(url, params)
+        if not is_threading:
+            load_api_work(url, params, region, region_data)
+        elif is_threading:
+            new_thread = threading.Thread(target=load_api_work,args=(url, params, region, region_data))
+            new_thread.start()
+            working_threads.append(new_thread)
 
-        # Response content is a string of XML data
-        df = xml_to_load_dataframe(response_content)
-
-        # If the region is not in the dictionary, create an empty dataframe for it
-        if region not in region_data:
-            region_data[region] = pd.DataFrame()
-
-        # Concatenate the current dataframe with the region's dataframe
-        region_data[region] = pd.concat([region_data[region], df], ignore_index=True)
-
+    if is_threading:
+        print("Esperadno a que acaben")
+        for thread in working_threads:
+            thread.join()
+        print("Acabaron")
     # Save the dataframes for each region to separate CSV files
     for region, df in region_data.items():
             df.to_csv(f'{output_path}/load_{region}.csv', index=False)
 
     return
 
-def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202303240000', output_path='./data'):
+
+
+
+def gen_api_work(url, params, region, region_data, file):
+    # Use the requests library to get data from the API for the specified time range
+    response_content = perform_get_request(url, params)
+
+    # Response content is a string of XML data
+    dfs = xml_to_gen_data(response_content)
+
+    # If the region is not in the dictionary, create an empty directory as its value, that will include the psr_types and corresponding data frames
+    if region not in region_data:
+        region_data[region] = {}
+
+    # Save each psr_type in region_data[region][psr_type] with corresponding df
+    for psr_type in dfs:
+        if extra_info:
+            print(f'Fetching psr_type: {psr_type} for region: {region}')
+            print(f'Fetching psr_type: {psr_type} for region: {region}', file=file)
+        
+        #If the psr_type is not in the dictionary, create an empty data frame for it
+        if psr_type not in region_data[region]:
+            region_data[region][psr_type] = pd.DataFrame()
+        
+        #Cocatenate current data frame of psr_type to existing data frame for psr_type in dict region_data[region]
+        region_data[region][psr_type] = pd.concat([region_data[region][psr_type], dfs[psr_type]], ignore_index=True) 
+    if basic_info:
+        print(f'Got gen data for {region} :)')
+        print(f'Got gen data for {region} :)', file=file)
+
+
+def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202303240000', output_path='./data', is_threading=True):
     with open("_output.txt", "w") as file:
     # Set file as empty
         print("GENERATION OUTPUT FOR LAST RUN:", file=file)
     with open("_output.txt", "a") as file: 
+        working_threads=[]
         # TODO: There is a period range limit of 1 day for this API. Process in 1 day chunks if needed
 
         # URL of the RESTful API
@@ -135,7 +179,7 @@ def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202
         
         # General parameters for the API
         params = {
-            'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
+            'securityToken': 'fb81432a-3853-4c30-a105-117c86a433ca',
             'documentType': 'A75',
             'processType': 'A16',
             'outBiddingZone_Domain': 'FILL_IN', # used for Load data
@@ -162,30 +206,16 @@ def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202
                     print(f'Fetching gen data for {region}...', file=file)
                 params['outBiddingZone_Domain'] = area_code
                 params['in_Domain'] = area_code
-            
-                # Use the requests library to get data from the API for the specified time range
-                response_content = perform_get_request(url, params)
-
-                # Response content is a string of XML data
-                dfs = xml_to_gen_data(response_content)
-
-                # If the region is not in the dictionary, create an empty directory as its value, that will include the psr_types and corresponding data frames
-                if region not in region_data:
-                    region_data[region] = {}
-
-                # Save each psr_type in region_data[region][psr_type] with corresponding df
-                for psr_type in dfs:
-                    if extra_info:
-                        print(f'Fetching psr_type: {psr_type} for region: {region}')
-                        print(f'Fetching psr_type: {psr_type} for region: {region}', file=file)
-                    
-                    #If the psr_type is not in the dictionary, create an empty data frame for it
-                    if psr_type not in region_data[region]:
-                        region_data[region][psr_type] = pd.DataFrame()
-                    
-                    #Cocatenate current data frame of psr_type to existing data frame for psr_type in dict region_data[region]
-                    region_data[region][psr_type] = pd.concat([region_data[region][psr_type], dfs[psr_type]], ignore_index=True)      
+                if not is_threading:
+                    gen_api_work(url, params, region, region_data, file)
+                elif is_threading:
+                    new_thread = threading.Thread(target=gen_api_work,args=(url, params, region, region_data, file))
+                    new_thread.start()
+                    working_threads.append(new_thread)
             day_start_period = day_end_period #Pass to next day for next iteration  
+
+        for thread in working_threads:
+            thread.join()
 
         #Create final CSV separate files with each info
         for region, region_data_psr_types in region_data.items():
@@ -254,11 +284,17 @@ def main(start_time, end_time, output_path):
     start_time = start_time.strftime('%Y%m%d%H%M')
     end_time = end_time.strftime('%Y%m%d%H%M')
 
+    t1 = time.time()
     # Get Load data from ENTSO-E
     get_load_data_from_entsoe(regions, start_time, end_time, output_path)
+    t2 = time.time()
+    print(f"load took with threading: {t2-t1}s.")
 
     # Get Generation data from ENTSO-E
+    t1 = time.time()
     get_gen_data_from_entsoe(regions, start_time, end_time, output_path)
+    t2 = time.time()
+    print(f"load took with threading: {t2-t1}s.")
 
 if __name__ == "__main__":
     args = parse_arguments()
