@@ -119,5 +119,7 @@ def perform_get_request(base_url, params):
     if response.status_code == 200:
         return response.text
     else:
-        raise Exception("ERROR REQUESTING TO API")
+        print(f"ERROR REQUESTING TO API: {response.status_code}, response: {response}")
+        df = xml_to_load_dataframe(response.content)
+        df.to_csv(f'errores/zone_{params["outBiddingZone_Domain"]}_start_{params["periodStart"]}_end_{params["periodEnd"]}.csv', index=False)
         return response.content
