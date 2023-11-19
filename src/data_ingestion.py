@@ -3,38 +3,63 @@ import datetime
 import pandas as pd
 from utils import perform_get_request, xml_to_load_dataframe, xml_to_gen_data
 
+basic_info = True
+debug_info = False
+
 def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202303240000', output_path='./data'):
     
-    # TODO: There is a period range limit of 1 year for this API. Process in 1 year chunks if needed
+    #There is a period range limit of 1 year for this API. Processed in 1 year chunks 
     
     # URL of the RESTful API
     url = 'https://web-api.tp.entsoe.eu/api'
 
-    # General parameters for the API
-    # Refer to https://transparency.entsoe.eu/content/static_content/Static%20content/web%20api/Guide.html#_documenttype
-    params = {
-        'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
-        'documentType': 'A65',
-        'processType': 'A16',
-        'outBiddingZone_Domain': 'FILL_IN', # used for Load data
-        'periodStart': periodStart, # in the format YYYYMMDDHHMM
-        'periodEnd': periodEnd # in the format YYYYMMDDHHMM
-    }
+    yearStart = int(periodStart[:4])
+    yearEnd = int(periodEnd[:4])
+    if debug_info:
+        print(f'start: {yearStart} end: {yearEnd}')
 
-    # Loop through the regions and get data for each region
-    for region, area_code in regions.items():
-        print(f'Fetching data for {region}...')
-        params['outBiddingZone_Domain'] = area_code
-    
-        # Use the requests library to get data from the API for the specified time range
-        response_content = perform_get_request(url, params)
+    dif = yearEnd - yearStart
 
-        # Response content is a string of XML data
-        df = xml_to_load_dataframe(response_content)
+    # Dictionary to store dataframes for each region
+    region_data = {}
 
-        # Save the DataFrame to a CSV file
+    for i in range(dif):
+        if debug_info:
+            print(i)
+        # General parameters for the API
+        params = {
+            'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
+            'documentType': 'A65',
+            'processType': 'A16',
+            'outBiddingZone_Domain': 'FILL_IN',  # used for Load data
+            'periodStart': str(yearStart + i) + periodStart[4:],
+            'periodEnd': str(yearStart + i + 1) + periodEnd[4:]
+        }
+        #print(params['periodStart'], params['periodEnd'])
+
+        # Loop through the regions and get data for each region
+        for region, area_code in regions.items():
+            if basic_info:
+                print(f'Fetching data for {region}...')
+            params['outBiddingZone_Domain'] = area_code
+
+            # Use the requests library to get data from the API for the specified time range
+            response_content = perform_get_request(url, params)
+
+            # Response content is a string of XML data
+            df = xml_to_load_dataframe(response_content)
+
+            # If the region is not in the dictionary, create an empty dataframe for it
+            if region not in region_data:
+                region_data[region] = pd.DataFrame()
+
+            # Concatenate the current dataframe with the region's dataframe
+            region_data[region] = pd.concat([region_data[region], df], ignore_index=True)
+
+    # Save the dataframes for each region to separate CSV files
+    for region, df in region_data.items():
         df.to_csv(f'{output_path}/load_{region}.csv', index=False)
-       
+
     return
 
 def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202303240000', output_path='./data'):
@@ -57,7 +82,8 @@ def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202
 
     # Loop through the regions and get data for each region
     for region, area_code in regions.items():
-        print(f'Fetching data for {region}...')
+        if basic_info:
+            print(f'Fetching data for {region}...')
         params['outBiddingZone_Domain'] = area_code
         params['in_Domain'] = area_code
     
@@ -74,13 +100,12 @@ def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202
     
     return
 
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Data ingestion script for Energy Forecasting Hackathon')
     parser.add_argument(
         '--start_time', 
         type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d'), 
-        default=datetime.datetime(2023, 1, 1), 
+        default=datetime.datetime(2022, 1, 1),
         help='Start time for the data to download, format: YYYY-MM-DD'
     )
     parser.add_argument(
