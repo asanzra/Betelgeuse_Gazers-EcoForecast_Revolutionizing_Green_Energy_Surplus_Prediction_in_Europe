@@ -255,7 +255,7 @@ def main(start_time, end_time, output_path):
     end_time = end_time.strftime('%Y%m%d%H%M')
 
     # Get Load data from ENTSO-E
-    #get_load_data_from_entsoe(regions, start_time, end_time, output_path)
+    get_load_data_from_entsoe(regions, start_time, end_time, output_path)
 
     # Get Generation data from ENTSO-E
     get_gen_data_from_entsoe(regions, start_time, end_time, output_path)
