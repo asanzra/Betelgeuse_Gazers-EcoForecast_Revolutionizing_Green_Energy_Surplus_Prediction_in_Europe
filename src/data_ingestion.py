@@ -211,7 +211,7 @@ def main(start_time, end_time, output_path):
         'DE': '10Y1001A1001A83F',
         'DK': '10Y1001A1001A65H',
         'SE': '10YSE-1--------K',
-        'NE': '10YNL----------L',
+        'NE': '10YNL----------L'
     }
 
     # Transform start_time and end_time to the format required by the API: YYYYMMDDHHMM

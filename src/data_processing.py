@@ -16,7 +16,7 @@ REGIONS = {
     'DE': '10Y1001A1001A83F',
     'DK': '10Y1001A1001A65H',
     'SE': '10YSE-1--------K',
-    'NE': '10YNL----------L',
+    'NE': '10YNL----------L'
 }
 #We do not consider as green and renewable: B01 Biomass, B02-B08 Fossils, B17 Waste
 GREEN_ENERGIES = {
