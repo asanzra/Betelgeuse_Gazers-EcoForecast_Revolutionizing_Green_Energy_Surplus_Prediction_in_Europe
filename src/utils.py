@@ -113,6 +113,18 @@ def make_url(base_url, params):
     query_string = "&".join([f"{k}={v}" for k, v in params.items()])
     return f"{base_url}?{query_string}"
 
+REGIONS = {
+    '10YHU-MAVIR----U' : 'HU',
+    '10YIT-GRTN-----B' : 'IT',
+    '10YPL-AREA-----S' : 'PO',
+    '10YES-REE------0' : 'SP',
+    '10Y1001A1001A92E' : 'UK',
+    '10Y1001A1001A83F' : 'DE',
+    '10Y1001A1001A65H' : 'DK',
+    '10YSE-1--------K' : 'SE',
+    '10YNL----------L' : 'NE'
+}
+
 def perform_get_request(base_url, params):
     url = make_url(base_url, params)
     response = requests.get(url)
@@ -121,5 +133,5 @@ def perform_get_request(base_url, params):
     else:
         print(f"ERROR REQUESTING TO API: {response.status_code}, response: {response}")
         df = xml_to_load_dataframe(response.content)
-        df.to_csv(f'_errores/zone_{params["outBiddingZone_Domain"]}_start_{params["periodStart"]}_end_{params["periodEnd"]}.csv', index=False)
+        df.to_csv(f'_errores/zone_{REGIONS[params["outBiddingZone_Domain"]]}_start_{params["periodStart"][:8]}_end_{params["periodEnd"][:8]}.csv', index=False)
         return response.content
