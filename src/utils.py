@@ -119,4 +119,5 @@ def perform_get_request(base_url, params):
     if response.status_code == 200:
         return response.text
     else:
+        raise Exception("ERROR REQUESTING TO API")
         return response.content
