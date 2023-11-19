@@ -6,6 +6,7 @@ from utils import perform_get_request, xml_to_load_dataframe, xml_to_gen_data
 
 basic_info = True
 debug_info = True
+extra_info = True
 
 def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202303240000', output_path='./data'):
     
@@ -106,77 +107,112 @@ def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='20
     return
 
 def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202303240000', output_path='./data'):
-    
-    # TODO: There is a period range limit of 1 day for this API. Process in 1 day chunks if needed
+    with open("_output.txt", "w") as file:
+    # Set file as empty
+        print("GENERATION OUTPUT FOR LAST RUN:", file=file)
+    with open("_output.txt", "a") as file: 
+        # TODO: There is a period range limit of 1 day for this API. Process in 1 day chunks if needed
 
-    # URL of the RESTful API
-    url = 'https://web-api.tp.entsoe.eu/api'
+        # URL of the RESTful API
+        url = 'https://web-api.tp.entsoe.eu/api'
 
-    # Convert start and end periods to datetime objects
-    start_date = pd.to_datetime(periodStart, format='%Y%m%d%H%M')
-    end_date = pd.to_datetime(periodEnd, format='%Y%m%d%H%M')
+        # Convert start and end periods to datetime objects
+        start_date = pd.to_datetime(periodStart, format='%Y%m%d%H%M')
+        end_date = pd.to_datetime(periodEnd, format='%Y%m%d%H%M')
 
-    if debug_info:
-        print(start_date, end_date)
-    # Calculate the number of days between start and end dates
-    num_days = (end_date - start_date).days
-
-    if debug_info:
-        print(num_days)
-    # Dictionary to store psr_type dictionaries for each region
-    region_data = {}
-    
-    # General parameters for the API
-    params = {
-        'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
-        'documentType': 'A75',
-        'processType': 'A16',
-        'outBiddingZone_Domain': 'FILL_IN', # used for Load data
-        'in_Domain': 'FILL_IN', # used for Generation data
-        'periodStart': periodStart, # in the format YYYYMMDDHHMM
-        'periodEnd': periodEnd # in the format YYYYMMDDHHMM
-    }
-    for j in range(num_days):
-        # Loop through the regions and get psr_types dict for each region
         if debug_info:
-            print(f'Day number: {j}')
-        for region, area_code in regions.items():
-            if basic_info:
-                print(f'Fetching gen data for {region}...')
-            params['outBiddingZone_Domain'] = area_code
-            params['in_Domain'] = area_code
+            print(f'Doing generation from: {start_date.strftime("%Y-%m-%d %H:%M:%S")} to: {end_date.strftime("%Y-%m-%d %H:%M:%S")}.')
+            print(f'Doing generation from: {start_date.strftime("%Y-%m-%d %H:%M:%S")} to: {end_date.strftime("%Y-%m-%d %H:%M:%S")}.', file=file)
+
+        # Calculate the number of days between start and end dates
+        num_days = (end_date - start_date).days
+
+        if debug_info:
+            print(f'Number of days in that interval: {num_days}')
+            print(f'Number of days in that interval: {num_days}', file=file)
+        # Dictionary to store psr_type dictionaries for each region
+        region_data = {}
         
-            # Use the requests library to get data from the API for the specified time range
-            response_content = perform_get_request(url, params)
+        # General parameters for the API
+        params = {
+            'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
+            'documentType': 'A75',
+            'processType': 'A16',
+            'outBiddingZone_Domain': 'FILL_IN', # used for Load data
+            'in_Domain': 'FILL_IN', # used for Generation data
+            'periodStart': periodStart, # in the format YYYYMMDDHHMM
+            'periodEnd': periodEnd # in the format YYYYMMDDHHMM
+        }
+        day_start_period = start_date
+        for j in range(num_days):
+            #Update days for this query
+            day_end_period = day_start_period + datetime.timedelta(days=1)
+            params['periodStart'] = day_start_period.strftime("%Y%m%d%H%M")
+            params['periodEnd'] = day_end_period.strftime("%Y%m%d%H%M")
+            # Loop through the regions and get psr_types dict for each region
+            if debug_info and extra_info:
+                print(f'-----------------------------------------------------------------------------------------------------------------------------------------')
+                print(f'-----------------------------------------------------------------------------------------------------------------------------------------', file=file)
+            if debug_info:
+                print(f'Day index: {j}/{num_days-1}. From: {day_start_period.strftime("%Y-%m-%d %H:%M:%S")} to : {day_end_period.strftime("%Y-%m-%d %H:%M:%S")}')
+                print(f'Day index: {j}/{num_days-1}. From: {day_start_period.strftime("%Y-%m-%d %H:%M:%S")} to : {day_end_period.strftime("%Y-%m-%d %H:%M:%S")}', file=file)
+            for region, area_code in regions.items():
+                if basic_info:
+                    print(f'Fetching gen data for {region}...')
+                    print(f'Fetching gen data for {region}...', file=file)
+                params['outBiddingZone_Domain'] = area_code
+                params['in_Domain'] = area_code
+            
+                # Use the requests library to get data from the API for the specified time range
+                response_content = perform_get_request(url, params)
 
-            # Response content is a string of XML data
-            dfs = xml_to_gen_data(response_content)
+                # Response content is a string of XML data
+                dfs = xml_to_gen_data(response_content)
 
-            # If the region is not in the dictionary, create an empty directory as its value, that will include the psr_types and corresponding data frames
-            if region not in region_data:
-                region_data[region] = {}
+                # If the region is not in the dictionary, create an empty directory as its value, that will include the psr_types and corresponding data frames
+                if region not in region_data:
+                    region_data[region] = {}
 
-            # Save each psr_type in region_data[region][psr_type] with corresponding df
-            for psr_type in dfs:
-                if debug_info:
-                    print(f'Fetching psr_type: {psr_type} for region: {region}')
-                
-                #If the psr_type is not in the dictionary, create an empty data frame for it
-                if psr_type not in region_data[region]:
-                     region_data[region][psr_type] = pd.DataFrame()
-                
-                #Cocatenate current data frame of psr_type to existing data frame for psr_type in dict region_data[region]
-                region_data[region][psr_type] = pd.concat([region_data[region][psr_type], dfs[psr_type]], ignore_index=True)        
+                # Save each psr_type in region_data[region][psr_type] with corresponding df
+                for psr_type in dfs:
+                    if extra_info:
+                        print(f'Fetching psr_type: {psr_type} for region: {region}')
+                        print(f'Fetching psr_type: {psr_type} for region: {region}', file=file)
+                    
+                    #If the psr_type is not in the dictionary, create an empty data frame for it
+                    if psr_type not in region_data[region]:
+                        region_data[region][psr_type] = pd.DataFrame()
+                    
+                    #Cocatenate current data frame of psr_type to existing data frame for psr_type in dict region_data[region]
+                    region_data[region][psr_type] = pd.concat([region_data[region][psr_type], dfs[psr_type]], ignore_index=True)      
+            day_start_period = day_end_period #Pass to next day for next iteration  
 
-    #Create final CSV separate files with each info
-    for region, region_data_psr_types in region_data.items():
-        for psr_type, df in region_data_psr_types.items():
-            #Drop duplicating final dataframe for each psr_type for each region
-            region_data[region][psr_type] = region_data[region][psr_type].drop_duplicates()
-            # Save Final DataFrames to separate CSV files for each region and psr_type
-            df.to_csv(f'{output_path}/gen_{region}_{psr_type}.csv', index=False)
-    
-    return
+        #Create final CSV separate files with each info
+        for region, region_data_psr_types in region_data.items():
+            for psr_type, df in region_data_psr_types.items():
+                # #Drop duplicating final dataframe for each psr_type for each region
+                # region_data[region][psr_type] = region_data[region][psr_type].drop_duplicates()
+                # Save Final DataFrames to separate CSV files for each region and psr_type
+
+
+                duplicates = df[df.duplicated()]
+                # Check if the resulting DataFrame is empty
+                if duplicates.empty:
+                    print("No duplicates found.")
+                    print("No duplicates found.", file=file)
+                else:
+                    print("//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////")
+                    print("Duplicates found. Rows:")
+                    print(duplicates)
+                    print("//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////",file=file)
+                    print("Duplicates found. Rows:", file=file)
+                    print(duplicates, file=file)
+
+
+                    
+                df.to_csv(f'{output_path}/gen_{region}_{psr_type}.csv', index=False)
+        
+        return
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Data ingestion script for Energy Forecasting Hackathon')
@@ -219,7 +255,7 @@ def main(start_time, end_time, output_path):
     end_time = end_time.strftime('%Y%m%d%H%M')
 
     # Get Load data from ENTSO-E
-    get_load_data_from_entsoe(regions, start_time, end_time, output_path)
+    #get_load_data_from_entsoe(regions, start_time, end_time, output_path)
 
     # Get Generation data from ENTSO-E
     get_gen_data_from_entsoe(regions, start_time, end_time, output_path)
