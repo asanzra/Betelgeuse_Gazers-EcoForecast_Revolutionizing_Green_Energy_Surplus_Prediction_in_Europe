@@ -257,8 +257,8 @@ def preprocess_data(df):
 
 def save_data(df, output_file):
     # TODO: Save processed data to a CSV file
-    df.to_csv('output.csv')
-    
+    df.to_csv(output_file)
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Data processing script for Energy Forecasting Hackathon')
     parser.add_argument(
