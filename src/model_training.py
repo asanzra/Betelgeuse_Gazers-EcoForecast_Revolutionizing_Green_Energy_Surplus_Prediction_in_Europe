@@ -6,13 +6,15 @@ import os
 import pandas as pd
 import numpy as np
 
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import InputLayer, LSTM, Dense
 from sklearn.metrics import mean_squared_error as mse
 from tensorflow.keras.metrics import RootMeanSquaredError
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint
+
+extra_info=True
 
 #We input the number of regions we are going to focus on
 num_regions=8
@@ -47,7 +49,7 @@ def df_to_X_y(df, window_size=window_size):
 
 def load_data(file_path):
     # TODO: Load processed data from CSV file
-    data_csv = '../data/processed_data.csv'
+    data_csv = './data/processed_data.csv'
     #Leemos el archivo, indicando que la primera columna son datos de fecha y hora
     #le decimos que use esos timestamps como indice
     df = pd.read_csv(data_csv, parse_dates=[0], index_col=0)
@@ -56,7 +58,7 @@ def load_data(file_path):
 def split_data(df):
     # TODO: Split data into training and validation sets (the test set is already provided in data/test_data.csv)
     df_to_X_y(df, window_size=window_size)
-        X, y = df_to_X_y(df)
+    X, y = df_to_X_y(df)
     if extra_info:
         X.shape, y.shape
     #X_train and y_train have a size of "num_train"
@@ -69,25 +71,25 @@ def split_data(df):
         X_train.shape, y_train.shape, X_val.shape, y_val.shape, X_test.shape, y_test.shape
     return X_train, X_val, y_train, y_val
 
-def train_model(X_train, y_train):
+def train_model(X_train, y_train, X_val, y_val):
     # TODO: Initialize your model and train it
     #We create our model, adding the necessary layers
 
     model1 = Sequential()
-    model1.add(InputLayer((window_size, X.shape[2])))
+    model1.add(InputLayer((window_size, 51)))
     model1.add(LSTM(100))
     model1.add(Dense(8, 'relu'))
     model1.add(Dense(1, 'linear'))
     if extra_info:
         model1.summary()
     cp4 = ModelCheckpoint('model_checkpoint/', save_best_only=True)
-    model1.compile(loss=MeanSquaredError(), optimizer=Adam(learning_rate=0.0001), metrics=[RootMeanSquaredError()])
+    model1.compile(loss=MeanSquaredError(), optimizer=Adam(learning_rate=0.0002), metrics=[RootMeanSquaredError()])
     model1.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=12, callbacks=[cp4])
     return model1
 
 def save_model(model1, model_path):
     # TODO: Save your trained model
-    model.save('../models')
+    model1.save('./models')
     pass
 
 def parse_arguments():
@@ -109,7 +111,7 @@ def parse_arguments():
 def main(input_file, model_file):
     df = load_data(input_file)
     X_train, X_val, y_train, y_val = split_data(df)
-    model = train_model(X_train, y_train)
+    model = train_model(X_train, y_train, X_val, y_val)
     save_model(model, model_file)
 
 if __name__ == "__main__":

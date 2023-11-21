@@ -21,7 +21,7 @@ num_test = 300
 
 def load_data(file_path):
     # TODO: Load test data from CSV file
-        data_csv = '../data/processed_data.csv'
+    data_csv = './data/processed_data.csv'
     #Leemos el archivo, indicando que la primera columna son datos de fecha y hora
     #le decimos que use esos timestamps como indice
     df = pd.read_csv(data_csv, parse_dates=[0], index_col=0)
@@ -29,12 +29,13 @@ def load_data(file_path):
 
 def load_model(model_path):
     # TODO: Load the trained model
+    model = load_model('./models')
     return model
 
 def make_predictions(df, model):
     # TODO: Use the model to make predictions on the test data
     df_to_X_y(df, window_size=window_size)
-        X, y = df_to_X_y(df)
+    X, y = df_to_X_y(df)
     if extra_info:
         X.shape, y.shape
     #X_train and y_train have a size of "num_train"
