@@ -69,6 +69,8 @@ This data includes, in intervals from 15 minutes to 1 hour:
 - Power generation from different sources (solar, wind, fossil fuels, etc.) in each country.
 - Total power load in each country.
 
+We grouped this data in 1-hour-intervals for consistency. In periods were it was needed to complete the hour, we interpolated the data with a custom interpolating function. Hours with no data at all wew left blank.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -94,10 +96,28 @@ This mainly comes from some energy types, which stop showing data from a certain
 
 ![missing_values_energy_plot]
 
+All of the energy types where more than 5 values are missing were discraded.
+
+After that, all of the hours where data was missing were discarded.
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- GETTING STARTED -->
+<!-- RESULTS -->
+## Results
+Although we worked hard to obtain the closest thing to a correct model as possible, our absolute inexperience with not only the concept but creating, training and using ML models, as well as with more basic things like using APIs or multi-threading has led to great delays in the times we expected to finish the parts of our project. This has finally resulted in not being able to finish by the due date.
+
+Our solution:
+- Correctly imports the data.
+- Processes the data and decides on training variables for a model.
+- Trains a model to predict future surplus - Jupiter notebook: model_training.ipynb
+Our solution cannot yet:
+- Make predictions because of not being able to load the model properly after saving it.
+
+
+We have had an unforgettable experience throughout this event. In addition to acquiring extensive knowledge about Machine Learning, encompassing concepts, various types, training methodologies, and practical applications through APIs and optimization techniques in Python, we have gained valuable insights into effectively managing our time within fixed deadlines and adapting to unforeseen challenges. Our gratitude extends to the organizers of the hackathon for orchestrating this enriching experience. We look forward to embracing more challenges of a similar nature in the future.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 <!-- GETTING STARTED -->
 ## Getting Started
 
