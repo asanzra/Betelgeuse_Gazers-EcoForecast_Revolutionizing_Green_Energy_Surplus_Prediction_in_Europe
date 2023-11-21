@@ -4,6 +4,7 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 import numpy as np
+import matplotlib.pyplot as plt
 
 basic_info = True
 extra_info = False
@@ -240,6 +241,50 @@ def preprocess_data(df):
     threshold = 5  # More than 5 NaN values
     # Identify columns to drop
     columns_to_drop = df.columns[df.isnull().sum() > threshold]
+
+
+
+
+
+    # Create a Matplotlib Figure and Axes
+    fig, ax = plt.subplots()
+    fig.set_facecolor('#2c3e50')  # Set the background color to a dark color
+
+    # Use Pandas plot on the specified Axes with a dark color scheme
+    df.isnull().sum().plot(kind='bar', color='#3498db', ax=ax)  # Use a dark blue color
+
+    # Add labels and title
+    ax.set_xlabel('Energy type', color='white')
+    ax.set_ylabel('Missing values', color='white')
+    ax.set_title('Missing values by energy type', color='white')
+    # Set the tick labels to white
+    ax.tick_params(axis='x', colors='white')
+    ax.tick_params(axis='y', colors='white')
+    # Save the plot to a PNG file
+    plt.savefig('data/missing_values_energy_plot.png')
+
+    # Clear the plot
+    plt.clf()
+
+    # Create a Matplotlib Figure and Axes
+    fig, ax = plt.subplots()
+    fig.set_facecolor('#2c3e50')  # Set the background color to a dark color
+
+    # Use Pandas plot on the specified Axes with a dark color scheme
+    df.isnull().sum(axis=1).plot(kind='bar', color='#3498db', ax=ax)  # Use a dark blue color
+    # Add labels and title
+    ax.set_xlabel('Date', color='white')
+    ax.set_ylabel('Missing values', color='white')
+    ax.set_title('Missing values by date', color='white')
+    # Set the tick labels to white
+    ax.tick_params(axis='x', colors='white')
+    ax.tick_params(axis='y', colors='white')
+    # Save the plot to a PNG file
+    plt.savefig('data/missing_values_time_plot.png')
+
+
+
+
 
     # Print the titles and number of NaN values for dropped columns
     for column in columns_to_drop:
