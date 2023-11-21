@@ -142,7 +142,7 @@ Our solution:
 - Trains a model to predict future surplus - Jupiter notebook: model_training.ipynb
 Our solution cannot yet:
 - Make predictions because of not being able to load the model properly after saving it.
-
+(The predictions in prediction.json are the example ones!)
 
 We have had an unforgettable experience throughout this event. In addition to acquiring extensive knowledge about Machine Learning, encompassing concepts, various types, training methodologies, and practical applications through APIs and optimization techniques in Python, we have gained valuable insights into effectively managing our time within fixed deadlines and adapting to unforeseen challenges. Our gratitude extends to the organizers of the hackathon for orchestrating this enriching experience. We look forward to embracing more challenges of a similar nature in the future.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
