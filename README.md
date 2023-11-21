@@ -43,6 +43,8 @@
       <ul>
         <li><a href="#built-with">Built With</a></li>
         <li><a href="#exploratory-data-analysis">Exploratory Data Analysis</a></li>
+        <li><a href="#model">Model</a></li>
+        <li><a href="#results">Results</a></li>
       </ul>
     </li>
     <li>
@@ -102,6 +104,43 @@ After that, all of the hours where data was missing were discarded.
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+## Model
+
+Composition of our model:
+
+    MulticlassSimpleClassification(
+
+        (layer1): Linear(in_features=5, out_features=512, bias=True)
+              
+        ReLU(layer1)
+        
+        (layer2): Linear(in_features=512, out_features=128, bias=True)
+        
+        Sigmoid(layer2)
+        
+        (layer3): Linear(in_features=128, out_features=64, bias=True)
+        
+        Sigmoid(layer3)
+        
+        (out): Linear(in_features=64, out_features=3, bias=True)
+        
+        Softmax(out)
+
+    )
+
+##### Criterion: Mean Squared Error[mean-squared-error-link]
+
+<!-- ![criterion] -->
+
+
+##### Optimizer: Adam[adam-link]
+
+<!-- ![optimizer] -->
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
 
 <!-- RESULTS -->
 ## Results
@@ -206,3 +245,5 @@ Project Link: [https://github.com/asanzra/Betelgeuse_Gazers-EcoForecast_Revoluti
 [product-screenshot]: images/screenshot.png
 [missing_values_energy_plot]: data/missing_values_energy_plot.png
 [missing_values_time_plot]: data/missing_values_time_plot.png
+[adam-link]: https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam
+[mean-squared-error-link]: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html
