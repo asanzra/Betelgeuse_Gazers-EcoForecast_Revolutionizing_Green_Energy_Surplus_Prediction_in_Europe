@@ -51,7 +51,6 @@
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#installation">Installation</a></li>
-        <li><a href="#usage">Usage</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
@@ -98,7 +97,7 @@ This mainly comes from some energy types, which stop showing data from a certain
 
 ![missing_values_energy_plot]
 
-All of the energy types where more than 5 values are missing were discraded.
+All of the energy types where more than 5 values were missing were discarded.
 
 After that, all of the hours where data was missing were discarded.
 
@@ -108,34 +107,25 @@ After that, all of the hours where data was missing were discarded.
 
 ## Model
 
-Composition of our model:
+#### Composition of our model:
 
-    MulticlassSimpleClassification(
+| Layer (type)        | Output Shape | Param # |
+|---------------------|--------------|---------|
+| lstm (LSTM)         | (None, 100)  | 60800   |
+| dense (Dense)       | (None, 8)    | 808     |
+| dense_1 (Dense)     | (None, 1)    | 9       |
+|---------------------|--------------|---------|
+| Total params        |              | 61617   |
+| Trainable params    |              | 61617   |
+| Non-trainable params|              | 0       |
 
-        (layer1): Linear(in_features=5, out_features=512, bias=True)
-              
-        ReLU(layer1)
-        
-        (layer2): Linear(in_features=512, out_features=128, bias=True)
-        
-        Sigmoid(layer2)
-        
-        (layer3): Linear(in_features=128, out_features=64, bias=True)
-        
-        Sigmoid(layer3)
-        
-        (out): Linear(in_features=64, out_features=3, bias=True)
-        
-        Softmax(out)
 
-    )
-
-##### Criterion: Mean Squared Error[mean-squared-error-link]
+##### Criterion: [Mean Squared Error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html)
 
 <!-- ![criterion] -->
 
 
-##### Optimizer: Adam[adam-link]
+##### Optimizer: [Adam](https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam)
 
 <!-- ![optimizer] -->
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -245,5 +235,3 @@ Project Link: [https://github.com/asanzra/Betelgeuse_Gazers-EcoForecast_Revoluti
 [product-screenshot]: images/screenshot.png
 [missing_values_energy_plot]: data/missing_values_energy_plot.png
 [missing_values_time_plot]: data/missing_values_time_plot.png
-[adam-link]: https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam
-[mean-squared-error-link]: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html
