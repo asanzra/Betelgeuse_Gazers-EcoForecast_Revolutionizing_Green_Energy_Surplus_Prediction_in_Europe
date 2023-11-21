@@ -5,6 +5,7 @@ import tensorflow as tf
 import os
 import pandas as pd
 import numpy as np
+import pickle
 
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import InputLayer, LSTM, Dense
@@ -49,7 +50,7 @@ def df_to_X_y(df, window_size=window_size):
 
 def load_data(file_path):
     # TODO: Load processed data from CSV file
-    data_csv = './data/processed_data.csv'
+    data_csv = './data/your_train.csv'
     #Leemos el archivo, indicando que la primera columna son datos de fecha y hora
     #le decimos que use esos timestamps como indice
     df = pd.read_csv(data_csv, parse_dates=[0], index_col=0)
@@ -82,14 +83,14 @@ def train_model(X_train, y_train, X_val, y_val):
     model1.add(Dense(1, 'linear'))
     if extra_info:
         model1.summary()
-    cp4 = ModelCheckpoint('model_checkpoint/', save_best_only=True)
+    cp4 = ModelCheckpoint('./models/model_checkpoint/', save_best_only=True)
     model1.compile(loss=MeanSquaredError(), optimizer=Adam(learning_rate=0.0002), metrics=[RootMeanSquaredError()])
     model1.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=12, callbacks=[cp4])
     return model1
 
 def save_model(model1, model_path):
     # TODO: Save your trained model
-    model1.save('./models')
+    model1.save('./models/saved_model_folder')
     pass
 
 def parse_arguments():
@@ -97,13 +98,13 @@ def parse_arguments():
     parser.add_argument(
         '--input_file', 
         type=str, 
-        default='data/processed_data.csv', 
+        default='data/your_train.csv', 
         help='Path to the processed data file to train the model'
     )
     parser.add_argument(
         '--model_file', 
         type=str, 
-        default='models/model.pkl', 
+        default='models', 
         help='Path to save the trained model'
     )
     return parser.parse_args()
