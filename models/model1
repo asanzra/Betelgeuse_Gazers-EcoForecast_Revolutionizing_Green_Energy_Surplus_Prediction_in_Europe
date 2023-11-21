@@ -1,0 +1,17 @@
+import tensorflow as tf
+import os
+import pandas as pd
+import numpy as np
+
+data_csv = 'output.csv'
+
+#Leemos el archivo, indicando que la primera columna son datos de fecha y hora
+#le decimos que use esos timestamps como indice
+
+df = pd.read_csv(data_csv, parse_dates=[0], index_col=0)
+df
+
+#extraemos los labels de la última columna del df
+labels = df.iloc[:, -1]
+#eliminamos la ultima columna del DataFrame que contiene nuestros datos
+df = df.iloc[:, :-1]
