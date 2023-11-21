@@ -282,7 +282,6 @@ def preprocess_data(df):
             surpluses[REGION] = surplus
         max_region = max(surpluses, key=lambda reg: surpluses[reg])
         labels.append(COUNTRY_IDS[max_region])
-    df_filtered_no_nan['label']=labels
 
     # Set a column for sin and cos of time in day, and day in year
     df_filtered_no_nan.index = pd.to_datetime(df_filtered_no_nan.index, format='%Y-%m-%d %H')
@@ -292,6 +291,8 @@ def preprocess_data(df):
 
     df_filtered_no_nan['Sin_DayOfYear'] = np.sin(2 * np.pi * df_filtered_no_nan.index.dayofyear / 365)
     df_filtered_no_nan['Cos_DayOfYear'] = np.cos(2 * np.pi * df_filtered_no_nan.index.dayofyear / 365)
+
+    df_filtered_no_nan['label']=labels
 
     df_processed=df_filtered_no_nan
 
