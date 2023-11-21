@@ -361,7 +361,7 @@ def parse_arguments():
     parser.add_argument(
         '--output_file', 
         type=str, 
-        default='data/processed_data.csv', 
+        default='data/your_train.csv', 
         help='Path to save the processed data'
     )
     return parser.parse_args()
