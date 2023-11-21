@@ -208,11 +208,6 @@ def clean_data(df):
 
 def preprocess_data(df):
     # TODO: Generate new features, transform existing features, resampling, etc.
-    df_processed=df
-    return df_processed
-
-def save_data(df, output_file):
-    # TODO: Save processed data to a CSV file
     data_for_dataframe = {}
     for main_key, small_key_value_list in df.items():
         for small_key_value in small_key_value_list:
@@ -227,12 +222,43 @@ def save_data(df, output_file):
     # Transpose the DataFrame to have main_keys as columns and small_keys as index
     df = df.transpose()
 
-    # Fill NaN with an empty string if desired
-    df = df.fillna('')
+    # Remove columns and rows
 
+    # Set the threshold for non-null values
+    threshold = 5  # More than 5 NaN values
+    # Identify columns to drop
+    columns_to_drop = df.columns[df.isnull().sum() > threshold]
+
+    # Print the titles and number of NaN values for dropped columns
+    for column in columns_to_drop:
+        num_nans = df[column].isnull().sum()
+        print(f"Dropped column '{column}' with {num_nans} NaN values")
+
+    # Drop columns where the number of non-null values is less than the threshold
+    df_filtered = df.drop(columns=columns_to_drop)
+
+    # Identify rows with any NaN values
+    rows_to_drop = df_filtered[df_filtered.isnull().any(axis=1)].index
+
+    # Print the indices (or any identifier) and number of NaN values for dropped rows
+    for row in rows_to_drop:
+        num_nans_row = df_filtered.loc[row].isnull().sum()
+        print(f"Dropped row '{row}' with {num_nans_row} NaN values")
+
+    # Drop rows with any NaN values
+    df_filtered_no_nan = df_filtered.dropna()
+
+    # Print the resulting DataFrame without NaN values
+    print("\nDataFrame without NaN values:")
+    print(df_filtered_no_nan)
+
+    df_processed=df_filtered_no_nan
+    return df_processed
+
+def save_data(df, output_file):
+    # TODO: Save processed data to a CSV file
     df.to_csv('output.csv')
-    print(df)
-
+    
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Data processing script for Energy Forecasting Hackathon')
     parser.add_argument(
