@@ -1,7 +1,7 @@
 import pandas as pd
 import argparse
 
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import InputLayer, LSTM, Dense
 from sklearn.metrics import mean_squared_error as mse
 from tensorflow.keras.metrics import RootMeanSquaredError
@@ -27,9 +27,9 @@ def load_data(file_path):
     df = pd.read_csv(data_csv, parse_dates=[0], index_col=0)
     return df
 
-def load_model(model_path):
+def load_model1(model_path):
     # TODO: Load the trained model
-    model = load_model('./models')
+    model = load_model(model_path)
     return model
 
 def make_predictions(df, model):
@@ -65,7 +65,7 @@ def parse_arguments():
     parser.add_argument(
         '--model_file', 
         type=str, 
-        default='models/model.pkl',
+        default='./models/saved_model_folder',
         help='Path to the trained model file'
     )
     parser.add_argument(
@@ -78,7 +78,7 @@ def parse_arguments():
 
 def main(input_file, model_file, output_file):
     df = load_data(input_file)
-    model = load_model(model_file)
+    model = load_model1(model_file)
     predictions = make_predictions(df, model)
     save_predictions(predictions, output_file)
 
