@@ -154,6 +154,7 @@ def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202
     # Set file as empty
         print("GENERATION OUTPUT FOR LAST RUN:", file=file)
     with open("_output.txt", "a") as file: 
+        request_count = 0#To prevent doing more than 400 per minute
         working_threads=[]
         # TODO: There is a period range limit of 1 day for this API. Process in 1 day chunks if needed
 
@@ -209,8 +210,16 @@ def get_gen_data_from_entsoe(regions, periodStart='202302240000', periodEnd='202
                 if not is_threading:
                     gen_api_work(url, params, region, region_data, file)
                 elif is_threading:
+                    if request_count >= 397:
+                        print("Sleeping to prevent api overuse")
+                        print("Sleeping to prevent api overuse", file=file)
+                        time.sleep(60)
+                        request_count = 0
                     new_thread = threading.Thread(target=gen_api_work,args=(url, params, region, region_data, file))
                     new_thread.start()
+                    print(f"Started thread no. {request_count} in this minute.")
+                    print(f"Started thread no. {request_count} in this minute.",file=file)
+                    request_count+=25
                     working_threads.append(new_thread)
             day_start_period = day_end_period #Pass to next day for next iteration  
 
@@ -292,7 +301,7 @@ def main(start_time, end_time, output_path):
 
     # Get Generation data from ENTSO-E
     t1 = time.time()
-    get_gen_data_from_entsoe(regions, start_time, end_time, output_path)
+    get_gen_data_from_entsoe(regions, start_time, end_time, output_path, False)
     t2 = time.time()
     print(f"load took with threading: {t2-t1}s.")
 
