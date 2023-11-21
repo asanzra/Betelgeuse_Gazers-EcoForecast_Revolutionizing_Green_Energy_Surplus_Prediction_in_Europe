@@ -3,6 +3,7 @@ import csv
 import os
 import pandas as pd
 from datetime import datetime, timedelta, timezone
+import numpy as np
 
 basic_info = True
 extra_info = False
@@ -17,6 +18,17 @@ REGIONS = {
     'DK': '10Y1001A1001A65H',
     'SE': '10YSE-1--------K',
     'NE': '10YNL----------L'
+}
+COUNTRY_IDS={
+    'SP': 0, # Spain
+    'UK': 1, # United Kingdom
+    'DE': 2, # Germany
+    'DK': 3, # Denmark
+    'HU': 5, # Hungary
+    'SE': 4, # Sweden
+    'IT': 6, # Italy
+    'PO': 7, # Poland
+    'NL': 8 # Netherlands
 }
 #We do not consider as green and renewable: B01 Biomass, B02-B08 Fossils, B17 Waste
 GREEN_ENERGIES = {
@@ -203,7 +215,7 @@ def clean_data(df):
                     average_quantity += quantity + second_differences[i]/total_second_difference
                 hour=start_hour
                 df[COUNTRY][ENERGY].append({hour : average_quantity})
-            df_clean[f'{COUNTRIES[COUNTRY]}_{ENERGY_CATEGORIES[ENERGY]}']=df[COUNTRY][ENERGY] #Append the list of all hours to clean data
+            df_clean[f'{COUNTRY}_{ENERGY}']=df[COUNTRY][ENERGY] #Append the list of all hours to clean data
     return df_clean
 
 def preprocess_data(df):
@@ -248,11 +260,44 @@ def preprocess_data(df):
     # Drop rows with any NaN values
     df_filtered_no_nan = df_filtered.dropna()
 
-    # Print the resulting DataFrame without NaN values
-    print("\nDataFrame without NaN values:")
-    print(df_filtered_no_nan)
+    labels=[]
+    for index, row in df_filtered_no_nan.iterrows():
+        surpluses={}
+        print(f"Row: {index}")
+        for i, REGION in enumerate(REGIONS):
+            country_columns = row.filter(regex=f'^{REGION}_')
+            if country_columns.empty:
+                continue
+            green_totals = 0
+            for GREEN_ENERGY in GREEN_ENERGIES:
+                green_column = country_columns.filter(regex=f'{GREEN_ENERGY}$')
+                if green_column.empty:
+                    continue
+                green_totals += green_column.iloc[0]
+            load_column = country_columns.filter(regex=f'{LOAD}$')
+            if load_column.empty:
+                    continue
+            load_total = load_column.iloc[0]
+            surplus = green_totals - load_total
+            surpluses[REGION] = surplus
+        max_region = max(surpluses, key=lambda reg: surpluses[reg])
+        labels.append(COUNTRY_IDS[max_region])
+    df_filtered_no_nan['label']=labels
+
+    # Set a column for sin and cos of time in day, and day in year
+    df_filtered_no_nan.index = pd.to_datetime(df_filtered_no_nan.index, format='%Y-%m-%d %H')
+    # Calculate sine and cosine values for hour and day
+    df_filtered_no_nan['Sin_Hour'] = np.sin(2 * np.pi * df_filtered_no_nan.index.hour / 24)
+    df_filtered_no_nan['Cos_Hour'] = np.cos(2 * np.pi * df_filtered_no_nan.index.hour / 24)
+
+    df_filtered_no_nan['Sin_DayOfYear'] = np.sin(2 * np.pi * df_filtered_no_nan.index.dayofyear / 365)
+    df_filtered_no_nan['Cos_DayOfYear'] = np.cos(2 * np.pi * df_filtered_no_nan.index.dayofyear / 365)
 
     df_processed=df_filtered_no_nan
+
+    # Print the resulting DataFrame
+    print("\nDataFrame:")
+    print(df_processed)
     return df_processed
 
 def save_data(df, output_file):
